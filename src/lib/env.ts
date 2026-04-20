@@ -1,7 +1,8 @@
 import { z } from "zod";
+import { config } from "dotenv";
 
 if (!process.env.VERCEL) {
-  await import("dotenv/config");
+  config();
 }
 
 const envSchema = z.object({
