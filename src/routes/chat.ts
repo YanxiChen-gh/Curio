@@ -4,8 +4,9 @@ import { db } from "../lib/db.js";
 import { embedText } from "../lib/embeddings.js";
 import { chatModel } from "../lib/llm.js";
 import { authMiddleware } from "../lib/auth.js";
+import type { AppVariables } from "../types/context.js";
 
-const app = new Hono();
+const app = new Hono<{ Variables: AppVariables }>();
 
 app.use("/api/chat", authMiddleware);
 
@@ -149,7 +150,7 @@ ${context}`;
     status: 200,
     headers: {
       "Content-Type": "text/event-stream",
-      "X-Session-Id": activeSessionId,
+      "X-Session-Id": activeSessionId || "",
     },
     stream: result.toUIMessageStream(),
   });

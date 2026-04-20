@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
 import type { Context, Next } from "hono";
+import type { AppVariables } from "../types/context.js";
 import { env } from "./env.js";
 import { db } from "./db.js";
 
@@ -11,7 +12,7 @@ export function verifyToken(token: string): { userId: string } {
   return jwt.verify(token, env.JWT_SECRET) as { userId: string };
 }
 
-export async function authMiddleware(c: Context, next: Next) {
+export async function authMiddleware(c: Context<{ Variables: AppVariables }>, next: Next) {
   const header = c.req.header("Authorization");
   if (!header?.startsWith("Bearer ")) {
     return c.json({ error: "Unauthorized" }, 401);
