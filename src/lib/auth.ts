@@ -45,6 +45,11 @@ export async function exchangeGoogleCode(
   code: string,
   redirectUri: string,
 ): Promise<GoogleUserInfo> {
+  console.log("[auth] Exchanging code, redirect:", redirectUri);
+
+  const controller1 = new AbortController();
+  const timeout1 = setTimeout(() => controller1.abort(), 8000);
+
   const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -55,19 +60,31 @@ export async function exchangeGoogleCode(
       redirect_uri: redirectUri,
       grant_type: "authorization_code",
     }),
+    signal: controller1.signal,
   });
+  clearTimeout(timeout1);
+
+  console.log("[auth] Token response status:", tokenRes.status);
 
   if (!tokenRes.ok) {
     const err = await tokenRes.text();
-    throw new Error(`Google token exchange failed: ${err}`);
+    throw new Error(`Google token exchange failed (${tokenRes.status}): ${err}`);
   }
 
   const tokens: GoogleTokenResponse = await tokenRes.json();
+  console.log("[auth] Got access token, fetching user info");
+
+  const controller2 = new AbortController();
+  const timeout2 = setTimeout(() => controller2.abort(), 8000);
 
   const userRes = await fetch(
     "https://www.googleapis.com/oauth2/v3/userinfo",
-    { headers: { Authorization: `Bearer ${tokens.access_token}` } },
+    {
+      headers: { Authorization: `Bearer ${tokens.access_token}` },
+      signal: controller2.signal,
+    },
   );
+  clearTimeout(timeout2);
 
   if (!userRes.ok) throw new Error("Failed to fetch Google user info");
   return userRes.json();
