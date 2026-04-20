@@ -1,7 +1,6 @@
 import { db } from "../lib/db.js";
 import { processNote } from "./processor.js";
 import type { XhsNote } from "../types/xhs.js";
-import { Prisma } from "@prisma/client";
 
 export async function ingestNotes(
   notes: XhsNote[],
@@ -41,16 +40,16 @@ export async function ingestNotes(
       for (let i = 0; i < chunks.length; i++) {
         const chunk = chunks[i];
         const vectorStr = `[${chunk.embedding.join(",")}]`;
-        await tx.$executeRaw`
-          INSERT INTO "Chunk" (id, content, embedding, "chunkIndex", "noteId")
-          VALUES (
-            ${Prisma.raw(`'${crypto.randomUUID()}'`)},
-            ${chunk.content},
-            ${Prisma.raw(`'${vectorStr}'::vector`)},
-            ${i},
-            ${dbNote.id}
-          )
-        `;
+        const chunkId = crypto.randomUUID();
+        await tx.$executeRawUnsafe(
+          `INSERT INTO "Chunk" (id, content, embedding, "chunkIndex", "noteId")
+           VALUES ($1, $2, $3::vector, $4, $5)`,
+          chunkId,
+          chunk.content,
+          vectorStr,
+          i,
+          dbNote.id,
+        );
       }
     });
 

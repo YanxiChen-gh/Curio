@@ -1,8 +1,9 @@
 import { Hono } from "hono";
 import { db } from "../lib/db.js";
 import { authMiddleware } from "../lib/auth.js";
+import type { AppVariables } from "../types/context.js";
 
-const app = new Hono();
+const app = new Hono<{ Variables: AppVariables }>();
 
 app.use("/api/sessions/*", authMiddleware);
 app.use("/api/sessions", authMiddleware);

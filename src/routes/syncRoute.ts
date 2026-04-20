@@ -1,9 +1,10 @@
 import { Hono } from "hono";
 import { ingestNotes } from "../ingestion/sync.js";
 import { authMiddleware } from "../lib/auth.js";
+import type { AppVariables } from "../types/context.js";
 import type { XhsNote } from "../types/xhs.js";
 
-const app = new Hono();
+const app = new Hono<{ Variables: AppVariables }>();
 
 app.use("/api/sync/*", authMiddleware);
 
