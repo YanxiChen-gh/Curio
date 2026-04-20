@@ -30,14 +30,24 @@ export async function authMiddleware(c: Context<{ Variables: AppVariables }>, ne
   }
 
   const clerkId = auth.userId;
+  const email = (auth.sessionClaims?.email as string) || "";
 
   let user = await db.user.findUnique({ where: { clerkId } });
+  if (!user && email) {
+    user = await db.user.findFirst({ where: { email } });
+    if (user) {
+      user = await db.user.update({
+        where: { id: user.id },
+        data: { clerkId },
+      });
+    }
+  }
   if (!user) {
     user = await db.user.create({
       data: {
         clerkId,
-        email: auth.sessionClaims?.email as string || "",
-        name: (auth.sessionClaims?.name as string) || (auth.sessionClaims?.email as string) || "",
+        email,
+        name: (auth.sessionClaims?.name as string) || email.split("@")[0],
       },
     });
   }
