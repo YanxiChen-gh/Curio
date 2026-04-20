@@ -1,9 +1,10 @@
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
+import { useAuth } from "@clerk/clerk-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import ChatMessage from "./ChatMessage";
 import ChatInput from "./ChatInput";
-import { authHeaders, api } from "../lib/api";
+import { api } from "../lib/api";
 
 interface Props {
   sessionId: string | null;
@@ -17,6 +18,7 @@ interface StoredMessage {
 }
 
 export default function ChatView({ sessionId, onSessionCreated: _onSessionCreated }: Props) {
+  const { getToken } = useAuth();
   const [history, setHistory] = useState<StoredMessage[]>([]);
   const chatKey = sessionId || "new";
 
@@ -34,10 +36,16 @@ export default function ChatView({ sessionId, onSessionCreated: _onSessionCreate
     () =>
       new DefaultChatTransport({
         api: "/api/chat",
-        headers: authHeaders(),
+        headers: async () => {
+          const token = await getToken();
+          return token
+            ? ({ Authorization: `Bearer ${token}` } as Record<string, string>)
+            : ({} as Record<string, string>);
+        },
         body: { sessionId },
+        credentials: "include",
       }),
-    [sessionId],
+    [sessionId, getToken],
   );
 
   const { messages, sendMessage, status, error } = useChat({
@@ -63,11 +71,7 @@ export default function ChatView({ sessionId, onSessionCreated: _onSessionCreate
   };
 
   const allMessages = [
-    ...history.map((m) => ({
-      id: m.id,
-      role: m.role,
-      text: m.content,
-    })),
+    ...history.map((m) => ({ id: m.id, role: m.role, text: m.content })),
     ...messages.map((msg) => ({
       id: msg.id,
       role: msg.role,
@@ -93,8 +97,7 @@ export default function ChatView({ sessionId, onSessionCreated: _onSessionCreate
               <h2 className="text-xl font-semibold mb-2">Curio 拾趣</h2>
               <p className="text-[var(--curio-muted)] text-sm max-w-xs">
                 Ask me anything about your saved posts. Try
-                "涩谷附近有什么好吃的？" or "recommend a coffee shop in
-                Shanghai"
+                "涩谷附近有什么好吃的？" or "recommend a coffee shop in Shanghai"
               </p>
             </div>
           )}

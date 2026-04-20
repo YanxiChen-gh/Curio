@@ -97,14 +97,15 @@ async function main() {
   console.log("🌱 Seeding Curio with sample data...");
 
   const user = await db.user.upsert({
-    where: { email: "demo@curio.app" },
+    where: { clerkId: "demo_clerk_id" },
     update: {},
     create: {
+      clerkId: "demo_clerk_id",
       email: "demo@curio.app",
       name: "Demo User",
     },
   });
-  console.log(`👤 Demo user: demo@curio.app (use Google login in production)`);
+  console.log(`👤 Demo user created (sign in with Clerk in production)`);
 
   const count = await ingestNotes(sampleNotes, "xiaohongshu", user.id);
   console.log(`✅ Seeded ${count} notes (with embeddings)`);

@@ -8,9 +8,8 @@ if (!process.env.VERCEL) {
 const envSchema = z.object({
   DATABASE_URL: z.string(),
   OPENAI_API_KEY: z.string(),
-  JWT_SECRET: z.string().default("curio-dev-secret-change-in-prod"),
-  GOOGLE_CLIENT_ID: z.string(),
-  GOOGLE_CLIENT_SECRET: z.string(),
+  CLERK_PUBLISHABLE_KEY: z.string(),
+  CLERK_SECRET_KEY: z.string(),
   PORT: z.coerce.number().default(3000),
 });
 

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Plus, Trash2, MessageCircle } from "lucide-react";
-import { api, authHeaders } from "../lib/api";
+import { api } from "../lib/api";
 
 interface Session {
   id: string;
@@ -30,7 +30,7 @@ export default function SessionList({ activeId, onSelect, onNew }: Props) {
     e.stopPropagation();
     await fetch(`/api/sessions/${id}`, {
       method: "DELETE",
-      headers: authHeaders(),
+      credentials: "include",
     });
     load();
     if (activeId === id) onNew();
