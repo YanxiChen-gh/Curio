@@ -26,7 +26,14 @@ app.post("/api/auth/google/callback", async (c) => {
   if (!code) return c.json({ error: "Missing code" }, 400);
 
   const redirectUri = redirect_uri || "http://localhost:5173/auth/callback";
-  const googleUser = await exchangeGoogleCode(code, redirectUri);
+
+  let googleUser;
+  try {
+    googleUser = await exchangeGoogleCode(code, redirectUri);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Unknown error";
+    return c.json({ error: `Google auth failed: ${msg}` }, 400);
+  }
 
   let user = await db.user.findUnique({
     where: { googleId: googleUser.sub },
