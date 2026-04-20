@@ -12,7 +12,7 @@ const sampleNotes: XhsNote[] = [
     tags: ["东京美食", "拉面", "涩谷", "日本旅行", "一蘭拉面"],
     location: "日本·东京·涩谷",
     imageUrls: ["https://example.com/ramen1.jpg"],
-    sourceUrl: "https://www.xiaohongshu.com/explore/sample-001",
+    sourceUrl: "xhsdiscover://item/sample-001",
   },
   {
     noteId: "sample-002",
@@ -23,7 +23,7 @@ const sampleNotes: XhsNote[] = [
     tags: ["上海咖啡", "外滩", "咖啡店推荐", "上海探店"],
     location: "中国·上海·黄浦区",
     imageUrls: ["https://example.com/coffee1.jpg"],
-    sourceUrl: "https://www.xiaohongshu.com/explore/sample-002",
+    sourceUrl: "xhsdiscover://item/sample-002",
   },
   {
     noteId: "sample-003",
@@ -34,7 +34,7 @@ const sampleNotes: XhsNote[] = [
     tags: ["MacBook", "M4", "数码测评", "程序员", "苹果"],
     location: "中国·北京",
     imageUrls: ["https://example.com/macbook1.jpg"],
-    sourceUrl: "https://www.xiaohongshu.com/explore/sample-003",
+    sourceUrl: "xhsdiscover://item/sample-003",
   },
   {
     noteId: "sample-004",
@@ -45,7 +45,7 @@ const sampleNotes: XhsNote[] = [
     tags: ["京都", "和服体验", "日本旅行", "清水寺", "攻略"],
     location: "日本·京都",
     imageUrls: ["https://example.com/kyoto1.jpg"],
-    sourceUrl: "https://www.xiaohongshu.com/explore/sample-004",
+    sourceUrl: "xhsdiscover://item/sample-004",
   },
   {
     noteId: "sample-005",
@@ -56,7 +56,7 @@ const sampleNotes: XhsNote[] = [
     tags: ["居家健身", "燃脂", "减肥", "健身打卡"],
     location: "中国·深圳",
     imageUrls: ["https://example.com/fitness1.jpg"],
-    sourceUrl: "https://www.xiaohongshu.com/explore/sample-005",
+    sourceUrl: "xhsdiscover://item/sample-005",
   },
   {
     noteId: "sample-006",
@@ -67,7 +67,7 @@ const sampleNotes: XhsNote[] = [
     tags: ["曼谷", "考山路", "泰国美食", "夜市", "泰国旅行"],
     location: "泰国·曼谷",
     imageUrls: ["https://example.com/bangkok1.jpg"],
-    sourceUrl: "https://www.xiaohongshu.com/explore/sample-006",
+    sourceUrl: "xhsdiscover://item/sample-006",
   },
   {
     noteId: "sample-007",
@@ -78,7 +78,7 @@ const sampleNotes: XhsNote[] = [
     tags: ["VS Code", "程序员", "开发工具", "效率工具"],
     location: "中国·杭州",
     imageUrls: ["https://example.com/vscode1.jpg"],
-    sourceUrl: "https://www.xiaohongshu.com/explore/sample-007",
+    sourceUrl: "xhsdiscover://item/sample-007",
   },
   {
     noteId: "sample-008",
@@ -89,7 +89,7 @@ const sampleNotes: XhsNote[] = [
     tags: ["首尔", "明洞", "韩国购物", "护肤品", "韩国旅行"],
     location: "韩国·首尔·明洞",
     imageUrls: ["https://example.com/seoul1.jpg"],
-    sourceUrl: "https://www.xiaohongshu.com/explore/sample-008",
+    sourceUrl: "xhsdiscover://item/sample-008",
   },
 ];
 

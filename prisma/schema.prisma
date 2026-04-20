@@ -30,8 +30,9 @@ model Note {
   tags       String[]
   location   String?
   imageUrls  String[]
-  sourceUrl  String
-  userId     String
+  sourceUrl   String
+  publishedAt String?
+  userId      String
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   syncedAt   DateTime @default(now())
   createdAt  DateTime @default(now())

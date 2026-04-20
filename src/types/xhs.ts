@@ -7,6 +7,7 @@ export interface XhsNote {
   location?: string;
   imageUrls: string[];
   sourceUrl: string;
+  publishedAt?: string;
 }
 
 export interface XhsOpenCliNote {

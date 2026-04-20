@@ -10,10 +10,13 @@ app.use("/api/sync/*", authMiddleware);
 
 app.post("/api/sync/trigger", async (c) => {
   const userId = c.get("userId") as string;
-  const body = await c.req.json<{
-    notes: XhsNote[];
-    platform?: string;
-  }>().catch(() => null);
+
+  let body: { notes: XhsNote[]; platform?: string } | null = null;
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json({ error: "Invalid JSON body" }, 400);
+  }
 
   if (!body?.notes?.length) {
     return c.json(
@@ -22,8 +25,31 @@ app.post("/api/sync/trigger", async (c) => {
     );
   }
 
-  const count = await ingestNotes(body.notes, body.platform || "xiaohongshu", userId);
-  return c.json({ ingested: count, total: body.notes.length });
+  const platform = body.platform || "xiaohongshu";
+  let ingested = 0;
+  let skipped = 0;
+  let failed = 0;
+
+  for (const note of body.notes) {
+    try {
+      const count = await ingestNotes([note], platform, userId);
+      if (count > 0) {
+        ingested++;
+      } else {
+        skipped++;
+      }
+    } catch (err) {
+      console.error(`[sync] Failed to ingest ${note.noteId}:`, (err as Error).message?.slice(0, 100));
+      failed++;
+    }
+  }
+
+  return c.json({
+    ingested,
+    skipped,
+    failed,
+    total: body.notes.length,
+  });
 });
 
 export default app;

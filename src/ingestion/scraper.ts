@@ -1,28 +1,75 @@
 import { chromium, type BrowserContext, type Page } from "playwright";
 import type { XhsNote } from "../types/xhs.js";
+import { describeImages } from "../lib/vision.js";
+import { resolve } from "path";
+import { existsSync, writeFileSync } from "fs";
 
-const CDP_URL = process.env.CHROME_CDP_URL || "http://localhost:9222";
+export interface ScrapeError {
+  noteId: string;
+  href: string;
+  reason: "login_wall" | "timeout" | "no_content" | "error";
+  message?: string;
+}
+
+export interface ScrapeResult {
+  notes: XhsNote[];
+  errors: ScrapeError[];
+}
+
+const CDP_URL = process.env.CHROME_CDP_URL;
+const SESSION_FILE = process.env.XHS_SESSION_FILE || resolve(process.cwd(), "xhs-session.json");
 
 export async function fetchSavedNotes(
   userId: string,
   maxNotes = 100,
   onNote?: (note: XhsNote, index: number, total: number) => Promise<void>,
-): Promise<XhsNote[]> {
-  const browser = await chromium.connectOverCDP(CDP_URL);
-  const context = browser.contexts()[0];
-  const page = await context.newPage();
+): Promise<ScrapeResult> {
+  let browser;
+  let context: BrowserContext;
+  let page: Page;
+  let shouldClose = false;
+
+  if (CDP_URL) {
+    console.log(`[scraper] Connecting to Chrome via CDP: ${CDP_URL}`);
+    browser = await chromium.connectOverCDP(CDP_URL);
+    context = browser.contexts()[0];
+    page = await context.newPage();
+  } else {
+    console.log(`[scraper] Launching headless Chromium with session: ${SESSION_FILE}`);
+    if (!existsSync(SESSION_FILE)) {
+      throw new Error(`Session file not found at ${SESSION_FILE}. Run: npm run save-cookies (with debug Chrome open + logged into rednote.com)`);
+    }
+    browser = await chromium.launch({
+      headless: true,
+      args: ["--disable-blink-features=AutomationControlled"],
+    });
+    context = await browser.newContext({
+      storageState: SESSION_FILE,
+      viewport: { width: 1920, height: 1080 },
+      userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36",
+    });
+    page = await context.newPage();
+    shouldClose = true;
+  }
 
   try {
     console.log(`[scraper] Opening profile...`);
     await page.goto(`https://www.rednote.com/user/profile/${userId}`, {
       waitUntil: "domcontentloaded",
-      timeout: 15_000,
+      timeout: 30_000,
     });
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(3000);
 
-    console.log(`[scraper] Clicking 收藏 tab...`);
-    await page.locator(".reds-tab-item", { hasText: "收藏" }).first().click();
-    await page.waitForTimeout(2000);
+    console.log(`[scraper] Clicking saved/收藏 tab...`);
+    const collectTab = page.locator(".reds-tab-item", { hasText: /收藏|Save/ }).first();
+    await collectTab.click();
+    await page.waitForTimeout(3000);
+
+    // Wait for collect tab content to load
+    await page.waitForSelector('.tab-content-item:nth-child(2) a[href*="xsec_token"]', { timeout: 10_000 }).catch(() => {
+      console.log("[scraper] Warning: No saved note links found after clicking tab. Retrying...");
+    });
+    await page.waitForTimeout(1000);
 
     // Scroll to collect note links with xsec_tokens
     const noteLinks = new Map<string, string>();
@@ -66,6 +113,7 @@ export async function fetchSavedNotes(
     console.log(`[scraper] Fetching ${entries.length} notes...`);
 
     const notes: XhsNote[] = [];
+    const errors: ScrapeError[] = [];
 
     for (let i = 0; i < entries.length; i++) {
       const [noteId, href] = entries[i];
@@ -73,21 +121,51 @@ export async function fetchSavedNotes(
         await page.goto(href, { waitUntil: "domcontentloaded", timeout: 15_000 });
         await page.waitForTimeout(2000);
 
+        const isLoginWall = await page.evaluate(() =>
+          document.body.innerText.includes("Log in with phone") ||
+          document.body.innerText.includes("登录") && document.body.innerText.includes("手机号"),
+        );
+
+        if (isLoginWall) {
+          errors.push({ noteId, href, reason: "login_wall" });
+          continue;
+        }
+
         const note = await extractNote(page, context, noteId);
         if (note && note.title && !note.title.includes("Sorry")) {
           notes.push(note);
-          console.log(`[scraper] ${notes.length}/${entries.length}: ${note.title.slice(0, 50)}`);
+          if (notes.length % 10 === 0 || notes.length <= 5) {
+            console.log(`[scraper] ${notes.length} scraped (${i + 1}/${entries.length}): ${note.title.slice(0, 50)}`);
+          }
 
           if (onNote) await onNote(note, notes.length, entries.length);
+        } else {
+          errors.push({ noteId, href, reason: "no_content" });
+        }
+
+        if (i % 10 === 9) {
+          await page.waitForTimeout(2000);
         }
       } catch (err) {
-        console.error(`[scraper] Failed ${noteId}:`, (err as Error).message?.slice(0, 80));
+        const msg = (err as Error).message?.slice(0, 100) || "unknown";
+        errors.push({ noteId, href, reason: msg.includes("Timeout") ? "timeout" : "error", message: msg });
       }
     }
 
-    return notes;
+    const loginWalls = errors.filter((e) => e.reason === "login_wall").length;
+    console.log(`[scraper] Done. ${notes.length} scraped, ${loginWalls} login walls, ${errors.length - loginWalls} other errors.`);
+
+    // Save errors for retry
+    const errFile = resolve(process.cwd(), "scrape-errors.json");
+    writeFileSync(errFile, JSON.stringify(errors, null, 2));
+    if (errors.length > 0) {
+      console.log(`[scraper] ${errors.length} errors saved to scrape-errors.json for retry.`);
+    }
+
+    return { notes, errors };
   } finally {
     await page.close();
+    if (shouldClose) await context.close();
   }
 }
 
@@ -111,6 +189,10 @@ async function extractNote(
 
   const location = await page
     .$eval("[class*='location'], [class*='ip-location']", (el) => el.textContent?.trim() || "")
+    .catch(() => "");
+
+  const publishedAt = await page
+    .$eval("[class*='date'], [class*='time'], [class*='publish']", (el) => el.textContent?.trim() || "")
     .catch(() => "");
 
   const tags = await page
@@ -157,11 +239,11 @@ async function extractNote(
     } catch {}
   }
 
-  // Download images through browser context for vision pipeline
-  const downloadedUrls: string[] = [];
+  // Download images and run vision to get descriptions
+  const downloadedBase64: string[] = [];
   for (const url of imageUrls.slice(0, 5)) {
     if (url.startsWith("data:")) {
-      downloadedUrls.push(url);
+      downloadedBase64.push(url);
       continue;
     }
     try {
@@ -169,21 +251,36 @@ async function extractNote(
       if (resp.ok()) {
         const body = await resp.body();
         const contentType = resp.headers()["content-type"] || "image/webp";
-        downloadedUrls.push(`data:${contentType};base64,${body.toString("base64")}`);
+        downloadedBase64.push(`data:${contentType};base64,${body.toString("base64")}`);
       }
     } catch {}
   }
 
-  if (!title && !content) return null;
+  // Run vision on images and append descriptions to content
+  let enrichedContent = content;
+  if (downloadedBase64.length > 0) {
+    try {
+      const descriptions = await describeImages(downloadedBase64, title);
+      if (descriptions.length === downloadedBase64.length) {
+        const descText = descriptions.map((d, i) => `[图片${i + 1}]: ${d}`).join("\n\n");
+        enrichedContent = content + "\n\n" + descText;
+      } else if (descriptions.length === 1) {
+        enrichedContent = content + "\n\n[图片描述]: " + descriptions[0];
+      }
+    } catch {}
+  }
+
+  if (!title && !enrichedContent) return null;
 
   return {
     noteId,
     title,
-    content,
+    content: enrichedContent,
     author: author || undefined,
     tags,
     location: location || undefined,
-    imageUrls: downloadedUrls,
-    sourceUrl: `https://www.rednote.com/explore/${noteId}`,
+    imageUrls: [],
+    sourceUrl: `xhsdiscover://item/${noteId}`,
+    publishedAt: publishedAt || undefined,
   };
 }

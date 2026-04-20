@@ -33,6 +33,7 @@ export async function ingestNotes(
           location: note.location,
           imageUrls: note.imageUrls,
           sourceUrl: note.sourceUrl,
+          publishedAt: note.publishedAt,
           userId: userId!,
         },
       });

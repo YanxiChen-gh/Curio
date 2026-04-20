@@ -46,8 +46,9 @@ async function main() {
     console.log(`Chrome CDP: ${process.env.CHROME_CDP_URL || "http://localhost:9222"}`);
     console.log(`API: ${apiUrl}\n`);
 
-    const notes = await fetchSavedNotes(userId, maxNotes);
-    console.log(`\nScraped ${notes.length} notes. Pushing to API...`);
+    const { notes, errors } = await fetchSavedNotes(userId, maxNotes);
+    const loginWalls = errors.filter((e) => e.reason === "login_wall").length;
+    console.log(`\nScraped ${notes.length} notes. ${loginWalls} login walls, ${errors.length - loginWalls} other errors.`);
 
     if (notes.length === 0) {
       console.log("No notes to ingest.");
