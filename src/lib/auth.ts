@@ -5,7 +5,20 @@ import type { AppVariables } from "../types/context.js";
 
 export { clerkMiddleware };
 
+const DEV_BYPASS = process.env.DEV_AUTH_BYPASS === "true";
+
 export async function authMiddleware(c: Context<{ Variables: AppVariables }>, next: Next) {
+  if (DEV_BYPASS) {
+    let user = await db.user.findFirst();
+    if (!user) {
+      user = await db.user.create({
+        data: { clerkId: "dev_user", email: "dev@curio.app", name: "Dev User" },
+      });
+    }
+    c.set("userId", user.id);
+    return next();
+  }
+
   const auth = getAuth(c);
 
   if (!auth?.userId) {
