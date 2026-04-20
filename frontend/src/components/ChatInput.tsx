@@ -33,18 +33,18 @@ export default function ChatInput({
           onChange={(e) => onChange(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="问问你收藏的笔记..."
-          className="flex-1 resize-none rounded-2xl border border-[var(--curio-border)] bg-[var(--curio-bg)] px-4 py-3 text-[16px] leading-snug focus:outline-none focus:border-[var(--curio-red)] focus:ring-1 focus:ring-[var(--curio-red-light)] transition-colors placeholder:text-[var(--curio-muted)]"
-          style={{ maxHeight: "120px" }}
+          className="flex-1 resize-none rounded-2xl border border-[var(--curio-border)] bg-[var(--curio-bg)] px-4 text-[16px] leading-snug focus:outline-none focus:border-[var(--curio-red)] focus:ring-1 focus:ring-[var(--curio-red-light)] transition-colors placeholder:text-[var(--curio-muted)]"
+          style={{ maxHeight: "120px", height: "44px", paddingTop: "10px", paddingBottom: "10px" }}
           onInput={(e) => {
             const el = e.currentTarget;
-            el.style.height = "auto";
+            el.style.height = "44px";
             el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
           }}
         />
         <button
           type="submit"
           disabled={isLoading || !input.trim()}
-          className="flex-shrink-0 w-11 h-11 rounded-full bg-[var(--curio-red)] text-white flex items-center justify-center disabled:opacity-40 transition-opacity active:scale-95"
+          className="flex-shrink-0 w-[44px] h-[44px] rounded-full bg-[var(--curio-red)] text-white flex items-center justify-center disabled:opacity-40 transition-opacity active:scale-95"
         >
           <Send size={18} />
         </button>
