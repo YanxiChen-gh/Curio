@@ -9,3 +9,4 @@ frontend/dist/
 .vercel
 xhs-session.json
 scrape-errors.json
+checkpoint-*.json
