@@ -15,13 +15,23 @@ export async function fetch(
   for await (const ref of input) {
     processed++;
     try {
-      await page.goto(ref.href, { waitUntil: "domcontentloaded", timeout: 15_000 });
-      await page.waitForTimeout(1500);
+      let isLoginWall = false;
+      const MAX_RETRIES = 3;
 
-      const isLoginWall = await page.evaluate(() =>
-        document.body.innerText.includes("Log in with phone") ||
-        (document.body.innerText.includes("登录") && document.body.innerText.includes("手机号")),
-      );
+      for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+        await page.goto(ref.href, { waitUntil: "domcontentloaded", timeout: 15_000 });
+        await page.waitForTimeout(1500);
+
+        isLoginWall = await page.evaluate(() =>
+          document.body.innerText.includes("Log in with phone") ||
+          (document.body.innerText.includes("登录") && document.body.innerText.includes("手机号")),
+        );
+
+        if (!isLoginWall) break;
+        if (attempt < MAX_RETRIES - 1) {
+          await page.waitForTimeout(2000 * (attempt + 1));
+        }
+      }
 
       if (isLoginWall) {
         errors.push({ noteId: ref.noteId, href: ref.href, stage: "fetcher", reason: "login_wall" });
