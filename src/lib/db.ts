@@ -4,10 +4,8 @@ import { env } from "./env.js";
 const isServerless = !!process.env.VERCEL;
 
 async function createServerlessClient() {
-  const { neon } = await import("@neondatabase/serverless");
   const { PrismaNeonHttp } = await import("@prisma/adapter-neon");
-  const sql = neon(env.DATABASE_URL);
-  const adapter = new PrismaNeonHttp(sql);
+  const adapter = new PrismaNeonHttp(env.DATABASE_URL, { arrayMode: false, fullResults: true });
   return new PrismaClient({ adapter } as never);
 }
 
