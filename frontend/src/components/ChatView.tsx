@@ -1,10 +1,9 @@
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
-import { useAuth } from "@clerk/clerk-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import ChatMessage from "./ChatMessage";
 import ChatInput from "./ChatInput";
-import { api } from "../lib/api";
+import { api, getAuthHeaders } from "../lib/api";
 
 interface Props {
   sessionId: string | null;
@@ -18,7 +17,6 @@ interface StoredMessage {
 }
 
 export default function ChatView({ sessionId, onSessionCreated: _onSessionCreated }: Props) {
-  const { getToken } = useAuth();
   const [history, setHistory] = useState<StoredMessage[]>([]);
   const chatKey = sessionId || "new";
 
@@ -36,16 +34,11 @@ export default function ChatView({ sessionId, onSessionCreated: _onSessionCreate
     () =>
       new DefaultChatTransport({
         api: "/api/chat",
-        headers: async () => {
-          const token = await getToken();
-          return token
-            ? ({ Authorization: `Bearer ${token}` } as Record<string, string>)
-            : ({} as Record<string, string>);
-        },
+        headers: () => getAuthHeaders(),
         body: { sessionId },
         credentials: "include",
       }),
-    [sessionId, getToken],
+    [sessionId],
   );
 
   const { messages, sendMessage, status, error } = useChat({

@@ -5,15 +5,20 @@ import "./index.css";
 import App from "./App.tsx";
 
 const CLERK_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
+const DEV_BYPASS = import.meta.env.VITE_DEV_AUTH_BYPASS === "true";
 
-if (!CLERK_KEY) {
+if (!CLERK_KEY && !DEV_BYPASS) {
   throw new Error("Missing VITE_CLERK_PUBLISHABLE_KEY");
 }
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <ClerkProvider publishableKey={CLERK_KEY}>
+    {DEV_BYPASS ? (
       <App />
-    </ClerkProvider>
+    ) : (
+      <ClerkProvider publishableKey={CLERK_KEY}>
+        <App />
+      </ClerkProvider>
+    )}
   </StrictMode>,
 );
