@@ -71,25 +71,18 @@ export async function runPipeline(opts: PipelineOptions) {
       }
     }
 
-    // Start all stages concurrently
-    const stages = [];
-
-    // Collector (only if not resuming from checkpoint)
+    // Stage 1: Collector runs first (uses the same page as fetcher, can't overlap)
     if (!resume || noteRefQueue.size === 0) {
-      stages.push(
-        collect(page, userId, maxNotes, noteRefQueue).then(() => {
-          // Checkpoint the fetcher queue for resume
-          rawNoteQueue.checkpoint(COLLECTOR_CHECKPOINT);
-        }),
-      );
+      await collect(page, userId, maxNotes, noteRefQueue);
     }
 
-    // Fetcher -> Enricher -> Pusher run concurrently
-    stages.push(fetchNotes(page, context, noteRefQueue, rawNoteQueue, errors));
-    stages.push(enrich(rawNoteQueue, enrichedQueue, errors));
-    stages.push(push(enrichedQueue, errors, apiUrl, token));
-
-    await Promise.all(stages);
+    // Stage 2-4: Fetcher, Enricher, Pusher run concurrently
+    // (fetcher uses the page sequentially, enricher + pusher overlap with it)
+    await Promise.all([
+      fetchNotes(page, context, noteRefQueue, rawNoteQueue, errors),
+      enrich(rawNoteQueue, enrichedQueue, errors),
+      push(enrichedQueue, errors, apiUrl, token),
+    ]);
 
     // Save errors
     writeFileSync(ERROR_FILE, JSON.stringify(errors, null, 2));

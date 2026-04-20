@@ -38,6 +38,29 @@ export async function fetch(
         continue;
       }
 
+      // Detect anti-bot block
+      const isBlocked = await page.evaluate(() =>
+        document.body.innerText.includes("安全限制") ||
+        document.body.innerText.includes("Security restriction") ||
+        document.body.innerText.includes("请稍后再试"),
+      );
+      if (isBlocked) {
+        console.log(`[fetcher] Anti-bot detected at note ${processed}. Pausing 60s...`);
+        await page.waitForTimeout(60_000);
+        // Retry this note after pause
+        await page.goto(ref.href, { waitUntil: "domcontentloaded", timeout: 15_000 });
+        await page.waitForTimeout(2000);
+        const stillBlocked = await page.evaluate(() =>
+          document.body.innerText.includes("安全限制") || document.body.innerText.includes("Security restriction"),
+        );
+        if (stillBlocked) {
+          console.log(`[fetcher] Still blocked after pause. Pausing 120s...`);
+          await page.waitForTimeout(120_000);
+          errors.push({ noteId: ref.noteId, href: ref.href, stage: "fetcher", reason: "error", message: "anti-bot block" });
+          continue;
+        }
+      }
+
       const raw = await extractRaw(page, context, ref.noteId);
       if (raw) {
         output.push(raw);
@@ -49,7 +72,13 @@ export async function fetch(
         errors.push({ noteId: ref.noteId, href: ref.href, stage: "fetcher", reason: "no_content" });
       }
 
-      if (processed % 15 === 0) await page.waitForTimeout(1500);
+      // Rate limit: pause every 5 notes, longer pause every 50
+      if (processed % 50 === 0) {
+        console.log(`[fetcher] Rate limit pause (30s) at ${processed} processed...`);
+        await page.waitForTimeout(30_000);
+      } else if (processed % 5 === 0) {
+        await page.waitForTimeout(3000);
+      }
     } catch (err) {
       const msg = (err as Error).message?.slice(0, 100) || "unknown";
       errors.push({
