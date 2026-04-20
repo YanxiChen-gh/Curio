@@ -30,8 +30,8 @@ function AppContent() {
 
   return (
     <div className="flex flex-col h-full">
-      <header className="safe-top bg-white/80 backdrop-blur-md border-b border-[var(--curio-border)] px-4 pt-2 pb-2 flex-shrink-0">
-        <div className="max-w-2xl mx-auto flex items-center justify-between">
+      <header className="safe-top bg-white/80 backdrop-blur-md border-b border-[var(--curio-border)] px-4 flex-shrink-0 flex items-center" style={{ minHeight: "48px" }}>
+        <div className="max-w-2xl mx-auto flex items-center justify-between w-full">
           <button
             onClick={() => { setSessionId(null); setTab("chat"); }}
             className="flex items-center gap-2"

@@ -22,10 +22,10 @@ export default function ChatInput({
   };
 
   return (
-    <div className="safe-bottom border-t border-[var(--curio-border)] bg-white/80 backdrop-blur-md px-4 pt-3 pb-3 flex-shrink-0">
+    <div className="safe-bottom border-t border-[var(--curio-border)] bg-white/80 backdrop-blur-md px-4 flex-shrink-0 flex items-center" style={{ minHeight: "56px" }}>
       <form
         onSubmit={onSubmit}
-        className="max-w-2xl mx-auto flex items-center gap-2"
+        className="max-w-2xl mx-auto flex items-center gap-2 w-full"
       >
         <textarea
           rows={1}
