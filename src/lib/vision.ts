@@ -4,6 +4,7 @@ import { env } from "./env.js";
 const openai = new OpenAI({ apiKey: env.OPENAI_API_KEY });
 
 async function urlToBase64(url: string): Promise<string | null> {
+  if (url.startsWith("data:")) return url;
   try {
     const res = await fetch(url, { signal: AbortSignal.timeout(10_000) });
     if (!res.ok) return null;
@@ -23,7 +24,7 @@ export async function describeImages(
   if (imageUrls.length === 0) return [];
 
   const validUrls = imageUrls.filter(
-    (u) => u && (u.startsWith("http://") || u.startsWith("https://")),
+    (u) => u && (u.startsWith("http://") || u.startsWith("https://") || u.startsWith("data:")),
   );
   if (validUrls.length === 0) return [];
 

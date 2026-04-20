@@ -9,10 +9,14 @@ const DEV_BYPASS = process.env.DEV_AUTH_BYPASS === "true";
 
 export async function authMiddleware(c: Context<{ Variables: AppVariables }>, next: Next) {
   if (DEV_BYPASS) {
-    let user = await db.user.findFirst();
+    const devEmail = process.env.DEV_USER_EMAIL || "dev@curio.app";
+    let user = await db.user.findFirst({ where: { email: devEmail } });
+    if (!user) {
+      user = await db.user.findFirst();
+    }
     if (!user) {
       user = await db.user.create({
-        data: { clerkId: "dev_user", email: "dev@curio.app", name: "Dev User" },
+        data: { clerkId: "dev_user", email: devEmail, name: "Dev User" },
       });
     }
     c.set("userId", user.id);
