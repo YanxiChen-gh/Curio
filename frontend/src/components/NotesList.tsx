@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ExternalLink, MapPin, Tag } from "lucide-react";
+import { MapPin, Tag } from "lucide-react";
 import { api } from "../lib/api";
 
 interface Note {
@@ -57,17 +57,14 @@ export default function NotesList() {
             key={note.id}
             className="bg-white rounded-2xl border border-[var(--curio-border)] p-4 shadow-sm"
           >
-            <div className="flex items-start justify-between gap-2 mb-2">
-              <h3 className="font-medium text-sm leading-snug flex-1">
-                {note.title}
-              </h3>
+            <div className="mb-2">
               <a
                 href={note.sourceUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-[var(--curio-muted)] hover:text-[var(--curio-red)] flex-shrink-0"
+                className="font-medium text-sm leading-snug hover:text-[var(--curio-red)] transition-colors"
               >
-                <ExternalLink size={14} />
+                {note.title}
               </a>
             </div>
 

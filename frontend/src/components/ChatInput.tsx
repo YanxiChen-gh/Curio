@@ -25,7 +25,7 @@ export default function ChatInput({
     <div className="safe-bottom border-t border-[var(--curio-border)] bg-white/80 backdrop-blur-md px-4 pt-3 pb-3 flex-shrink-0">
       <form
         onSubmit={onSubmit}
-        className="max-w-2xl mx-auto flex items-end gap-2"
+        className="max-w-2xl mx-auto flex items-center gap-2"
       >
         <textarea
           rows={1}

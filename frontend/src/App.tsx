@@ -32,14 +32,17 @@ function AppContent() {
     <div className="flex flex-col h-full">
       <header className="safe-top bg-white/80 backdrop-blur-md border-b border-[var(--curio-border)] px-4 pt-2 pb-2 flex-shrink-0">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2">
+          <button
+            onClick={() => { setSessionId(null); setTab("chat"); }}
+            className="flex items-center gap-2"
+          >
             <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[var(--curio-red)] to-[var(--curio-red-light)] flex items-center justify-center text-white text-sm font-bold">
               拾
             </div>
             <h1 className="text-lg font-semibold text-[var(--curio-text)]">
               Curio
             </h1>
-          </div>
+          </button>
           {DEV_BYPASS ? (
             <span className="text-xs text-[var(--curio-muted)]">Dev</span>
           ) : (
