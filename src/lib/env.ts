@@ -1,5 +1,8 @@
 import { z } from "zod";
-import "dotenv/config";
+
+if (!process.env.VERCEL) {
+  await import("dotenv/config");
+}
 
 const envSchema = z.object({
   DATABASE_URL: z.string(),
